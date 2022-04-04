@@ -8,6 +8,10 @@ project: 'barcode04'
 #----------------------------------------
 raw_fastq: 'Input_Files/Microbiome_barcode04.fastq'
 
+# Quality filter Configuration (# iterations)
+#--------------------------------------------
+quality_filter: [7,10]
+
 #Program Files Location
 #----------------------------------------
 # This includes the location of running programs
@@ -15,9 +19,8 @@ raw_fastq: 'Input_Files/Microbiome_barcode04.fastq'
 #--------------------------------------------------------------------------------
 n_threads: '150'
 porechop_runner: 'bin/Porechop/porechop-runner.py'
-
-
-
+guppy_barcoder: 'bin/ont-guppy-cpu/bin/guppy_barcoder'
+ProwlerTrimmer: 'bin/ProwlerTrimmer/TrimmerLarge.py'
 
 ##list_of_scripts=[fromfasta_16Spipe.py, fromfastQ_16Spipe.py]
 #script_fromfasta=fromfasta_16Spipe.py
