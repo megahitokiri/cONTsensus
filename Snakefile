@@ -10,7 +10,11 @@ rule cONTsensus:
 		expand("OTU_Processing/Trimmed_Fastq_Porechop/{project}.fastq.barcode_trimmed.porechop",project=config["project"]),
 		expand("OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/{project}.fastq.barcode_trimmed.guppy_barcoder",project=config["project"]),
 		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.fastq.ProwlerTrimmer.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/Filtlong_QF_{quality_filter}/{project}.fastq.Filtlong.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt",project=config["project"],quality_filter=config["quality_filter"]),
 
+		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
 #--------------------------------------------------------------------------------
@@ -64,9 +68,9 @@ rule Guppy_Barcoder:
 		cat $(find OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/ -type f -name "*.fastq") > OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/{params.project}.fastq.barcode_trimmed.guppy_barcoder
 		"""
 
-#--------------------------------------------------------------------------------
-# ProwlerTrimmer: Remove Adapters from nanopore fastq file method #3
-#--------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------
+# ProwlerTrimmer: Asses Quality filtering using window approach after Guppy_Barcoder
+#-----------------------------------------------------------------------------------
 rule ProwlerTrimmer:
 	input:
 		rules.Guppy_Barcoder.output,
@@ -76,6 +80,7 @@ rule ProwlerTrimmer:
 		project=config["project"],
 		ProwlerTrimmer=config["ProwlerTrimmer"],
 		quality_filter=config["quality_filter"],
+		L_filt=config["L_filt"],
 	shell:
 		"""
 		QF_LIST=$(echo {params.quality_filter})
@@ -84,7 +89,7 @@ rule ProwlerTrimmer:
 			do
 
 			echo STARTING FILTERING VIA PROWLER_TRIMMER AT QUALITY FILTER OF: $Q_filter ...
-			python3 {params.ProwlerTrimmer} -f {params.project}.fastq.barcode_trimmed.guppy_barcoder -i OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/ -o OTU_Processing/ProwlerTrimmer_QF_$Q_filter/{params.project} -w 200 -l 600 -g F1 -m D -q $Q_filter 
+			python3 {params.ProwlerTrimmer} -f {params.project}.fastq.barcode_trimmed.guppy_barcoder -i OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/ -o OTU_Processing/ProwlerTrimmer_QF_$Q_filter/{params.project} -w 200 -l {params.L_filt} -g F1 -m D -q $Q_filter 
 
 			cd OTU_Processing/ProwlerTrimmer_QF_$Q_filter
 			mv $(find . -type f -name "*.fastq") {params.project}.fastq.ProwlerTrimmer.QF_$Q_filter
@@ -93,3 +98,58 @@ rule ProwlerTrimmer:
 			done
 
 		"""
+		
+#-----------------------------------------------------------------------------------
+# Filtlong: Asses Quality filtering using window approach after Porechop
+#-----------------------------------------------------------------------------------		
+rule Filtlong:
+	input:
+		rules.Porechop.output,
+	output:
+		expand("OTU_Processing/Filtlong_QF_{quality_filter}/{project}.fastq.Filtlong.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
+	params:
+		project=config["project"],
+		Filtlong=config["Filtlong"],
+		quality_filter=config["quality_filter"],
+		L_filt=config["L_filt"],
+	shell:
+		"""
+		QF_LIST=$(echo {params.quality_filter})
+
+		for Q_filter in $QF_LIST
+			do
+			vQF=$(python -c "Result=(1-(10**(-(float($Q_filter)/10))))*100; print(Result)")
+			
+			echo STARTING FILTERING VIA PROWLER_TRIMMER AT QUALITY FILTER OF $Q_filter: corresponding to vQ of: $vQF ...
+			{params.Filtlong} OTU_Processing/Trimmed_Fastq_Porechop/{params.project}.fastq.barcode_trimmed.porechop --min_mean_q $vQF --min_length {params.L_filt} > OTU_Processing/Filtlong_QF_$Q_filter/{params.project}.fastq.Filtlong.QF_$Q_filter
+			
+			done
+
+		"""
+
+#-----------------------------------------------------------------------------------
+# BLAST: Compares the sequences against a fasta or blast database
+#-----------------------------------------------------------------------------------		
+rule BLAST:
+	input:
+		rules.Filtlong.output,
+	output:
+		blast_fasta="OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",
+		db_16S_ribosomal_RNA="OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt"
+	params:
+		n_threads=config["n_threads"],
+		quality_filter=config["quality_filter"],
+		seqtk=config["seqtk"],
+		blastn=config["blastn"],
+		db_16S_ribosomal_RNA=config["db_16S_ribosomal_RNA"],
+		max_target_seqs=config["max_target_seqs"],
+		evalue=config["evalue"],
+	shell:
+		"""
+		echo CONVERTING FASTQ TO FASTA FILE...
+		{params.seqtk} seq -a {input} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
+
+		echo INITIATING BLASTn IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: {wildcards.project}.QF_{wildcards.quality_filter}.fasta
+		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
+		"""
+		

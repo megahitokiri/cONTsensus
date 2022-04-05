@@ -9,8 +9,10 @@ project: 'barcode04'
 raw_fastq: 'Input_Files/Microbiome_barcode04.fastq'
 
 # Quality filter Configuration (# iterations)
-#--------------------------------------------
-quality_filter: [7,10]
+#L_filt: refers to the minimum lenght for a read to pass filters
+#---------------------------------------------------------------
+quality_filter: [6,7,8]
+L_filt: '800'
 
 #Program Files Location
 #----------------------------------------
@@ -21,6 +23,22 @@ n_threads: '150'
 porechop_runner: 'bin/Porechop/porechop-runner.py'
 guppy_barcoder: 'bin/ont-guppy-cpu/bin/guppy_barcoder'
 ProwlerTrimmer: 'bin/ProwlerTrimmer/TrimmerLarge.py'
+Filtlong: 'bin/Filtlong/bin/filtlong'
+seqtk: 'bin/seqtk/seqtk'
+blastn: 'bin/ncbi-blast-2.13.0+/bin/blastn'
+
+#Databases Location
+#----------------------------------------
+# This includes the location of all available databases
+db_16S_ribosomal_RNA: 'databases/16S_ribosomal_RNA/16S_ribosomal_RNA'
+
+#BLAST parameters
+#----------------------------------------------
+# This section set parameters for BLAST commnad
+max_target_seqs: '10'
+evalue: '0.00001' 
+
+
 
 ##list_of_scripts=[fromfasta_16Spipe.py, fromfastQ_16Spipe.py]
 #script_fromfasta=fromfasta_16Spipe.py
