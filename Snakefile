@@ -13,7 +13,7 @@ rule cONTsensus:
 		expand("OTU_Processing/Filtlong_QF_{quality_filter}/{project}.fastq.Filtlong.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt",project=config["project"],quality_filter=config["quality_filter"]),
-
+		expand("OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
@@ -153,20 +153,19 @@ rule BLAST_NCBI:
 		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
 		"""
 
-#-----------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------
 # 16S_ppm_NCBI: Transform blast and guppy_aligner results into a percentage content file
-#-----------------------------------------------------------------------------------		
-rule 16S_ppm_NCBI:
+#----------------------------------------------------------------------------------------
+rule NCBI_16S_ppm:
 	input:
-		rules.BLAST_NCBI.output.db_16S_ribosomal_RNA,
-		rules.BLAST_NCBI.output.blast_fasta
-	output:	
-		"Out16S__{project}_species_counts.txt"
+		BLAST_results=rules.BLAST_NCBI.output.db_16S_ribosomal_RNA,
+	output:
+		"OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA_species_counts.txt",
 	params:
-		16S_ppm=config["16S_ppm"]
+		python_16S_ppm=config["16S_ppm"],
 	shell:
 		"""
-		python {params.16S_ppm} {input.rules.BLAST_NCBI.output.blast_fasta}
+		cp {input.BLAST_results} {input.BLAST_results}.bak
+		python {params.python_16S_ppm} {input.BLAST_results}
+		mv {input.BLAST_results}.bak {input.BLAST_results}
 		"""
-		
-		
