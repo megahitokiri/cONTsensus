@@ -26,7 +26,7 @@ ProwlerTrimmer: 'bin/ProwlerTrimmer/TrimmerLarge.py'
 Filtlong: 'bin/Filtlong/bin/filtlong'
 seqtk: 'bin/seqtk/seqtk'
 blastn: 'bin/ncbi-blast-2.13.0+/bin/blastn'
-
+16S_ppm: 'bin/16S_ppm/16S_ppm_output.py'
 #Databases Location
 #----------------------------------------
 # This includes the location of all available databases
@@ -36,26 +36,8 @@ db_16S_ribosomal_RNA: 'databases/16S_ribosomal_RNA/16S_ribosomal_RNA'
 #----------------------------------------------
 # This section set parameters for BLAST commnad
 max_target_seqs: '10'
-evalue: '0.00001' 
+evalue: '0.00001'
 
-
-
-##list_of_scripts=[fromfasta_16Spipe.py, fromfastQ_16Spipe.py]
-#script_fromfasta=fromfasta_16Spipe.py
-#script_fromfastQ=fromfastQ_16Spipe.py
-#num_threads=140
-#porechop_runner=bin/Porechop/porechop-runner.py
-#porechop=1
-#Nanofilt_runner=bin/miniconda3/bin/NanoFilt
-#Nanofilt=1
-#Filtlong_runner=bin/Filtlong-master/filtlong
-#Q_filt=7
-#L_filt=800
-#max_num_fasta=20000
-#min_num_fasta=1
-#db=NCBI_16S_db/PRJNA33175_Bacterial_16S.fasta
-#blastn="bin/ncbi-blast-2.9.0+/bin/blastn"
-#max_t=5
-#evalue=0.00001
-#align_coverage_cutoff=0
-#align_perc_id_cutoff=0
+#This parameters can be changed in the 16S_ppm file
+#align_coverage_cutoff: 0
+#align_perc_id_cutoff: 0

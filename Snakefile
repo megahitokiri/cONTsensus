@@ -128,9 +128,9 @@ rule Filtlong:
 		"""
 
 #-----------------------------------------------------------------------------------
-# BLAST: Compares the sequences against a fasta or blast database
+# BLAST: Compares the sequences against NCBI db_16S_ribosomal_RNA blast database
 #-----------------------------------------------------------------------------------		
-rule BLAST:
+rule BLAST_NCBI:
 	input:
 		rules.Filtlong.output,
 	output:
@@ -152,4 +152,21 @@ rule BLAST:
 		echo INITIATING BLASTn IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: {wildcards.project}.QF_{wildcards.quality_filter}.fasta
 		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
 		"""
+
+#-----------------------------------------------------------------------------------
+# 16S_ppm_NCBI: Transform blast and guppy_aligner results into a percentage content file
+#-----------------------------------------------------------------------------------		
+rule 16S_ppm_NCBI:
+	input:
+		rules.BLAST_NCBI.output.db_16S_ribosomal_RNA,
+		rules.BLAST_NCBI.output.blast_fasta
+	output:	
+		"Out16S__{project}_species_counts.txt"
+	params:
+		16S_ppm=config["16S_ppm"]
+	shell:
+		"""
+		python {params.16S_ppm} {input.rules.BLAST_NCBI.output.blast_fasta}
+		"""
+		
 		
