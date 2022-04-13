@@ -147,7 +147,7 @@ rule BLAST_NCBI:
 	shell:
 		"""
 		echo CONVERTING FASTQ TO FASTA FILE...
-		{params.seqtk} seq -a {input} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
+		{params.seqtk} seq -a OTU_Processing/Filtlong_QF_{wildcards.quality_filter}/{wildcards.project}.fastq.Filtlong.QF_{quality_filter} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
 
 		echo INITIATING BLASTn IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: {wildcards.project}.QF_{wildcards.quality_filter}.fasta
 		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
