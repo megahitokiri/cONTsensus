@@ -9,11 +9,13 @@ rule cONTsensus:
 		expand("OTU_Processing/Input_Files/{project}.fastq",project=config["project"]),
 		expand("OTU_Processing/Trimmed_Fastq_Porechop/{project}.fastq.barcode_trimmed.porechop",project=config["project"]),
 		expand("OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/{project}.fastq.barcode_trimmed.guppy_barcoder",project=config["project"]),
-		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.fastq.ProwlerTrimmer.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.fastq",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/Filtlong_QF_{quality_filter}/{project}.fastq.Filtlong.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary",project=config["project"],quality_filter=config["quality_filter"]),
 		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
@@ -75,7 +77,7 @@ rule ProwlerTrimmer:
 	input:
 		rules.Guppy_Barcoder.output,
 	output:
-		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.fastq.ProwlerTrimmer.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.fastq",project=config["project"],quality_filter=config["quality_filter"]),
 	params:
 		project=config["project"],
 		ProwlerTrimmer=config["ProwlerTrimmer"],
@@ -92,7 +94,7 @@ rule ProwlerTrimmer:
 			python3 {params.ProwlerTrimmer} -f {params.project}.fastq.barcode_trimmed.guppy_barcoder -i OTU_Processing/Trimmed_Fastq_Guppy_Barcoder/ -o OTU_Processing/ProwlerTrimmer_QF_$Q_filter/{params.project} -w 200 -l {params.L_filt} -g F1 -m D -q $Q_filter 
 
 			cd OTU_Processing/ProwlerTrimmer_QF_$Q_filter
-			mv $(find . -type f -name "*.fastq") {params.project}.fastq.ProwlerTrimmer.QF_$Q_filter
+			mv $(find . -type f -name "*.fastq") {params.project}.ProwlerTrimmer.QF_$Q_filter.fastq
 			
 			cd ../..
 			done
@@ -128,7 +130,7 @@ rule Filtlong:
 		"""
 
 #-----------------------------------------------------------------------------------
-# BLAST: Compares the sequences against NCBI db_16S_ribosomal_RNA blast database
+# BLAST_NCBI: Compares the sequences against NCBI db_16S_ribosomal_RNA blast database
 #-----------------------------------------------------------------------------------		
 rule BLAST_NCBI:
 	input:
@@ -147,10 +149,32 @@ rule BLAST_NCBI:
 	shell:
 		"""
 		echo CONVERTING FASTQ TO FASTA FILE...
-		{params.seqtk} seq -a OTU_Processing/Filtlong_QF_{wildcards.quality_filter}/{wildcards.project}.fastq.Filtlong.QF_{quality_filter} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
+		{params.seqtk} seq -a OTU_Processing/Filtlong_QF_{wildcards.quality_filter}/{wildcards.project}.fastq.Filtlong.QF_{wildcards.quality_filter} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
 
 		echo INITIATING BLASTn IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: {wildcards.project}.QF_{wildcards.quality_filter}.fasta
 		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
+		"""
+
+#------------------------------------------------------------------------------------------------------------------------
+# Guppy_Aligner_NCBI: Compares the sequences against NCBI db_16S_ribosomal_RNA blast database (minimap2_based)
+# sed -e 's/\s\+/_/g' 16S_ribosomal_RNA.fasta  to 16S_ribosomal_RNA.fasta.names_corrected
+#------------------------------------------------------------------------------------------------------------------------
+rule Guppy_Aligner_NCBI:
+	input:
+		rules.ProwlerTrimmer.output,
+	output:
+		guppy_16S_ribosomal_RNA="OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam",
+		summary_Guppy_aligner="OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary"
+	params:
+		n_threads=config["n_threads"],
+		project=config["project"],
+		guppy_aligner=config["guppy_aligner"],	
+		db_16S_ribosomal_RNA=config["db_16S_ribosomal_RNA"],
+	shell:
+		"""
+		echo STARTING ALIGNING OF FASTQ VIA GUPPY_BARCODER IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: ProwlerTrimmer_QF_{wildcards.quality_filter}
+		{params.guppy_aligner} -i OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam -s OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter} --align_ref {params.db_16S_ribosomal_RNA}.fasta.names_corrected --align_type auto -t {params.n_threads} --bam_out
+		cp OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/alignment_summary.txt OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.Guppy_aligner.QF_{wildcards.quality_filter}.summary
 		"""
 
 #---------------------------------------------------------------------------------------
