@@ -173,8 +173,8 @@ rule Guppy_Aligner_NCBI:
 	shell:
 		"""
 		echo STARTING ALIGNING OF FASTQ VIA GUPPY_BARCODER IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: ProwlerTrimmer_QF_{wildcards.quality_filter}
-		{params.guppy_aligner} -i OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam -s OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter} --align_ref {params.db_16S_ribosomal_RNA}.fasta.names_corrected --align_type auto -t {params.n_threads} --bam_out
-		cp OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/alignment_summary.txt OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.Guppy_aligner.QF_{wildcards.quality_filter}.summary
+		{params.guppy_aligner} -i OTU_Processing/ProwlerTrimmer_QF_{wildcards.quality_filter}/ -s OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter} --align_ref {params.db_16S_ribosomal_RNA}.fasta.names_corrected --align_type auto -t {params.n_threads} --bam_out
+		cp OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/alignment_summary.txt OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.Guppy_aligner.QF_{wildcards.quality_filter}.summary
 		"""
 
 #---------------------------------------------------------------------------------------
