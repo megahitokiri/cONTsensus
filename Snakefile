@@ -12,10 +12,11 @@ rule cONTsensus:
 		expand("OTU_Processing/ProwlerTrimmer_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.fastq",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/Filtlong_QF_{quality_filter}/{project}.fastq.Filtlong.QF_{quality_filter}",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",project=config["project"],quality_filter=config["quality_filter"]),
-		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt",project=config["project"],quality_filter=config["quality_filter"]),
-		expand("OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.BLAST.unfilter_top_hits.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.BLAST_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_Processing/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
@@ -137,7 +138,7 @@ rule BLAST_NCBI:
 		rules.Filtlong.output,
 	output:
 		blast_fasta="OTU_Processing/BLAST/{project}.QF_{quality_filter}.fasta",
-		db_16S_ribosomal_RNA="OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt"
+		db_16S_ribosomal_RNA="OTU_Processing/BLAST/{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.BLAST.unfilter_top_hits.txt"
 	params:
 		n_threads=config["n_threads"],
 		quality_filter=config["quality_filter"],
@@ -152,7 +153,7 @@ rule BLAST_NCBI:
 		{params.seqtk} seq -a OTU_Processing/Filtlong_QF_{wildcards.quality_filter}/{wildcards.project}.fastq.Filtlong.QF_{wildcards.quality_filter} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta
 
 		echo INITIATING BLASTn IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: {wildcards.project}.QF_{wildcards.quality_filter}.fasta
-		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.unfilter_top_hits.txt
+		{params.blastn} -db {params.db_16S_ribosomal_RNA} -query OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.fasta -num_threads {params.n_threads} -outfmt '6 qseqid evalue qcovhsp salltitles pident' -max_target_seqs {params.max_target_seqs} -evalue {params.evalue} > OTU_Processing/BLAST/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.BLAST.unfilter_top_hits.txt
 		"""
 
 #------------------------------------------------------------------------------------------------------------------------
@@ -178,18 +179,35 @@ rule Guppy_Aligner_NCBI:
 		"""
 
 #---------------------------------------------------------------------------------------
-# 16S_ppm_NCBI: Transform blast and guppy_aligner results into a percentage content file
+# NCBI_16S_ppm: Transform blast and guppy_aligner results into a percentage content file
 #----------------------------------------------------------------------------------------
 rule NCBI_16S_ppm:
 	input:
 		BLAST_results=rules.BLAST_NCBI.output.db_16S_ribosomal_RNA,
 	output:
-		"OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA_species_counts.txt",
+		"OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.BLAST_species_counts.txt",
 	params:
 		python_16S_ppm=config["16S_ppm"],
 	shell:
 		"""
 		cp {input.BLAST_results} {input.BLAST_results}.bak
-		python {params.python_16S_ppm} {input.BLAST_results}
+		python {params.python_16S_ppm} {input.BLAST_results} OTU_Processing/BLAST/
 		mv {input.BLAST_results}.bak {input.BLAST_results}
 		"""
+		
+#---------------------------------------------------------------------------------------
+# GUPPY_ALIGNER_16S_ppm: Transform blast and guppy_aligner results into a percentage content file
+#----------------------------------------------------------------------------------------
+rule GUPPY_ALIGNER_16S_ppm:
+	input:
+		GUPPY_ALIGNER_results=rules.Guppy_Aligner_NCBI.output.summary_Guppy_aligner,
+	output:
+		"OTU_Processing/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",
+	params:
+		python_16S_ppm=config["16S_ppm"],
+	shell:
+		"""
+		BASEDIR=$PWD
+		Rscript --vanilla scripts/guppy_aligner_parser.R $BASEDIR/{input} $BASEDIR/OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt
+		python {params.python_16S_ppm} $BASEDIR/OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_Processing/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/
+		"""		

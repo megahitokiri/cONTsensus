@@ -22,11 +22,13 @@ L_filt: '800'
 n_threads: '150'
 porechop_runner: 'bin/Porechop/porechop-runner.py'
 guppy_barcoder: 'bin/ont-guppy-cpu/bin/guppy_barcoder'
+guppy_aligner: 'bin/ont-guppy-cpu/bin/guppy_aligner'
 ProwlerTrimmer: 'bin/ProwlerTrimmer/TrimmerLarge.py'
 Filtlong: 'bin/Filtlong/bin/filtlong'
 seqtk: 'bin/seqtk/seqtk'
 blastn: 'bin/ncbi-blast-2.13.0+/bin/blastn'
 16S_ppm: 'bin/16S_ppm/16S_ppm_output.py'
+
 #Databases Location
 #----------------------------------------
 # This includes the location of all available databases
