@@ -207,13 +207,13 @@ rule BLAST_16S_ppm:
 		BASEDIR=$PWD
 		echo STARTING 16S_ppm ON: {input.BLAST_results_NCBI}
 		cp {input.BLAST_results_NCBI} {input.BLAST_results_NCBI}.bak
-		python {params.python_16S_ppm} {input.BLAST_results_NCBI} OTU_{params.project}/BLAST/
+		python {params.python_16S_ppm} {input.BLAST_results_NCBI} OTU_{params.project}/BLAST/ OTU_{params.project}/16S_ppm_results
 		mv {input.BLAST_results_NCBI}.bak {input.BLAST_results_NCBI}
 		
 		echo STARTING 16S_ppm ON: {input.BLAST_results_GGC}
 		cp {input.BLAST_results_GGC} {input.BLAST_results_GGC}.bak
 		Rscript --vanilla scripts/GGC_BLAST_name_correction.R $BASEDIR/{input.BLAST_results_GGC}
-		python {params.python_16S_ppm} {input.BLAST_results_GGC} OTU_{params.project}/BLAST/
+		python {params.python_16S_ppm} {input.BLAST_results_GGC} OTU_{params.project}/BLAST/ OTU_{params.project}/16S_ppm_results
 		mv {input.BLAST_results_GGC}.bak {input.BLAST_results_GGC}
 		"""
 		
@@ -232,5 +232,5 @@ rule GUPPY_ALIGNER_16S_ppm:
 		"""
 		BASEDIR=$PWD
 		Rscript --vanilla scripts/guppy_aligner_parser.R $BASEDIR/{input} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt
-		python {params.python_16S_ppm} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/
+		python {params.python_16S_ppm} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/ OTU_{params.project}/16S_ppm_results
 		"""		

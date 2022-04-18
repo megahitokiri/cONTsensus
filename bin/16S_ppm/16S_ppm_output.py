@@ -86,9 +86,10 @@ align_perc_id_cutoff=0
 inpQ=sys.argv[1] 
 inp2=inpQ.split(".unfilter_top_hits.txt")[0];inp2=inp2.split("/")[-1]
 
-folder=sys.argv[2]
+input_folder=sys.argv[2]
+out_folder = sys.argv[3]
 
-nome_temp=folder+inp2+".unfilter_top_hits.txt"
+nome_temp=input_folder+inp2+".unfilter_top_hits.txt"
 f2=filter_multiID(nome_temp)
 
 koff=align_coverage_cutoff
@@ -154,7 +155,7 @@ outo.close()
 
 ### below, clean up of temporary files, and move output files to output folder
 
-out="OTU_Processing/16S_ppm_results"
+out=out_folder
 
 if os.path.isdir(out):
     os.system("ls | wc -l")
