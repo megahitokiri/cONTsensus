@@ -33,7 +33,7 @@ blastn: 'bin/ncbi-blast-2.13.0+/bin/blastn'
 #----------------------------------------
 # This includes the location of all available databases
 db_16S_ribosomal_RNA: 'databases/16S_ribosomal_RNA/16S_ribosomal_RNA'
-
+db_ggc: 'databases/GGC_db/Green_Gene_Consensus'
 #BLAST parameters
 #----------------------------------------------
 # This section set parameters for BLAST commnad
