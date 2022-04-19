@@ -18,8 +18,10 @@ rule cONTsensus:
 
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.BLAST_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam",project=config["project"],quality_filter=config["quality_filter"]),
+		
 		expand("OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary",project=config["project"],quality_filter=config["quality_filter"]),
-
+		expand("OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.db_GGC.summary",project=config["project"],quality_filter=config["quality_filter"]),
+		
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.BLAST_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),		
 #--------------------------------------------------------------------------------
@@ -176,17 +178,25 @@ rule Guppy_Aligner_NCBI:
 		rules.ProwlerTrimmer.output,
 	output:
 		guppy_16S_ribosomal_RNA="OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.ProwlerTrimmer.QF_{quality_filter}.bam",
-		summary_Guppy_aligner="OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary"
+		summary_Guppy_aligner="OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.summary",
+		summary_Guppy_aligner_GGC="OTU_{project}/GUPPY_ALIGNER_QF_{quality_filter}/{project}.Guppy_aligner.QF_{quality_filter}.db_GGC.summary",
 	params:
 		project=config["project"],
 		n_threads=config["n_threads"],
 		guppy_aligner=config["guppy_aligner"],	
 		db_16S_ribosomal_RNA=config["db_16S_ribosomal_RNA"],
+		db_GGC=config["db_ggc"],
 	shell:
 		"""
 		echo STARTING ALIGNING OF FASTQ VIA GUPPY_BARCODER IN DATABASE: {params.db_16S_ribosomal_RNA} ON FASTA FILE: ProwlerTrimmer_QF_{wildcards.quality_filter}
 		{params.guppy_aligner} -i OTU_{params.project}/ProwlerTrimmer_QF_{wildcards.quality_filter}/ -s OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter} --align_ref {params.db_16S_ribosomal_RNA}.fasta.names_corrected --align_type auto -t {params.n_threads} --bam_out
 		cp OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/alignment_summary.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.Guppy_aligner.QF_{wildcards.quality_filter}.summary
+
+		rm OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/alignment_summary.txt
+		
+		echo STARTING ALIGNING OF FASTQ VIA GUPPY_BARCODER IN DATABASE: {params.db_GGC} ON FASTA FILE: ProwlerTrimmer_QF_{wildcards.quality_filter}
+		{params.guppy_aligner} -i OTU_{params.project}/ProwlerTrimmer_QF_{wildcards.quality_filter}/ -s OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter} --align_ref {params.db_GGC}.fasta --align_type auto -t {params.n_threads}
+		cp OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/alignment_summary.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.Guppy_aligner.QF_{wildcards.quality_filter}.db_GGC.summary
 		"""
 
 #---------------------------------------------------------------------------------------
