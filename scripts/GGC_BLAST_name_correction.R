@@ -33,6 +33,8 @@ BLAST_results$Candidatus_fix <-ifelse(BLAST_results$Candidatus_fix==TRUE,
                                       BLAST_results$salltitles)
 
 BLAST_results$salltitles <- BLAST_results$Candidatus_fix
+BLAST_results$salltitles <- gsub("_"," ",BLAST_results$salltitles)
+
 BLAST_results$Word_count <-NULL
 BLAST_results$word1 <- NULL
 BLAST_results$word2 <- NULL
