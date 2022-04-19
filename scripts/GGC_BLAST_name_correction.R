@@ -11,4 +11,4 @@ colnames(BLAST_results) <- c("qseqid", "evalue", "qcovhsp", "salltitles", "piden
 
 BLAST_results$salltitles <- gsub("_"," ",BLAST_results$salltitles)
 
-write.table(Guppy_summary_results,file=output_file, quote = FALSE, sep ="\t", row.names = FALSE, col.names = FALSE, na ="")
+write.table(BLAST_results,file=output_file, quote = FALSE, sep ="\t", row.names = FALSE, col.names = FALSE, na ="")
