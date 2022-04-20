@@ -24,6 +24,8 @@ rule cONTsensus:
 		
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.BLAST_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),		
+		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
 #--------------------------------------------------------------------------------
@@ -173,7 +175,7 @@ rule BLAST:
 # Guppy_Aligner_NCBI: Compares the sequences against NCBI db_16S_ribosomal_RNA blast database (minimap2_based)
 # sed -e 's/\s\+/_/g' 16S_ribosomal_RNA.fasta  to 16S_ribosomal_RNA.fasta.names_corrected
 #------------------------------------------------------------------------------------------------------------------------
-rule Guppy_Aligner_NCBI:
+rule Guppy_Aligner:
 	input:
 		rules.ProwlerTrimmer.output,
 	output:
@@ -227,20 +229,29 @@ rule BLAST_16S_ppm:
 		mv {input.BLAST_results_GGC}.bak {input.BLAST_results_GGC}
 		"""
 		
-#---------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
 # GUPPY_ALIGNER_16S_ppm: Transform blast and guppy_aligner results into a percentage content file
-#----------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
 rule GUPPY_ALIGNER_16S_ppm:
 	input:
-		GUPPY_ALIGNER_results=rules.Guppy_Aligner_NCBI.output.summary_Guppy_aligner,
+		GUPPY_ALIGNER_results=rules.Guppy_Aligner.output.summary_Guppy_aligner,
+		GUPPY_ALIGNER_results_GGC=rules.Guppy_Aligner.output.summary_Guppy_aligner_GGC,
 	output:
-		"OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",
+		NCBI_species="OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER_species_counts.txt",
+		GGC_species="OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.GUPPY_ALIGNER_species_counts.txt",
+
 	params:
 		project=config["project"],
 		python_16S_ppm=config["16S_ppm"],
 	shell:
 		"""
 		BASEDIR=$PWD
-		Rscript --vanilla scripts/guppy_aligner_parser.R $BASEDIR/{input} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt
+		echo STARTING 16S_ppm ON: {input.GUPPY_ALIGNER_results}
+		Rscript --vanilla scripts/guppy_aligner_parser.R $BASEDIR/{input.GUPPY_ALIGNER_results} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt
 		python {params.python_16S_ppm} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_16S_ribosomal_RNA.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/ OTU_{params.project}/16S_ppm_results
+		
+		echo STARTING 16S_ppm ON: {input.GUPPY_ALIGNER_results_GGC}
+		Rscript --vanilla scripts/guppy_aligner_parser_GGC.R $BASEDIR/{input.GUPPY_ALIGNER_results_GGC} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_GGC.GUPPY_ALIGNER.unfilter_top_hits.txt
+		Rscript --vanilla scripts/GGC_BLAST_name_correction.R $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_GGC.GUPPY_ALIGNER.unfilter_top_hits.txt
+		python {params.python_16S_ppm} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_GGC.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/ OTU_{params.project}/16S_ppm_results
 		"""		
