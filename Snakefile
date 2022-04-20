@@ -27,6 +27,7 @@ rule cONTsensus:
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		
 		expand("OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		expand("OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.expanded",project=config["project"],quality_filter=config["quality_filter"]),
 		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
@@ -267,9 +268,13 @@ rule OTU_COMBINER_CLEANER:
 		rules.BLAST_16S_ppm.output,
 	output:
 		All_Combined_Species_count="OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.txt",
+		Expanded_Species_count="OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.expanded",
 	params:
 		project=config["project"],
 	shell:
 		"""
+		BASEDIR=$PWD
 		cat $(find OTU_{params.project}/16S_ppm_results -type f -name "*QF_{wildcards.quality_filter}*species_counts.txt") > OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt
+		sed -i '/^#/d' OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt
+		Rscript --vanilla scripts/OTU_expander.R $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.expanded
 		"""				
