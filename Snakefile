@@ -26,6 +26,8 @@ rule cONTsensus:
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.BLAST_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),		
 		expand("OTU_{project}/16S_ppm_results/Out16S_{project}.QF_{quality_filter}.db_GGC.GUPPY_ALIGNER_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		
+		expand("OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
+		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
 #--------------------------------------------------------------------------------
@@ -255,3 +257,19 @@ rule GUPPY_ALIGNER_16S_ppm:
 		Rscript --vanilla scripts/GGC_BLAST_name_correction.R $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_GGC.GUPPY_ALIGNER.unfilter_top_hits.txt
 		python {params.python_16S_ppm} $BASEDIR/OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/{wildcards.project}.QF_{wildcards.quality_filter}.db_GGC.GUPPY_ALIGNER.unfilter_top_hits.txt OTU_{params.project}/GUPPY_ALIGNER_QF_{wildcards.quality_filter}/ OTU_{params.project}/16S_ppm_results
 		"""		
+		
+#-------------------------------------------------------------------------------------------------
+# OTU_COMBINER: Combine all the Species_count results into one expanded file
+#-------------------------------------------------------------------------------------------------
+rule OTU_COMBINER_CLEANER:
+	input:
+		rules.GUPPY_ALIGNER_16S_ppm.output,
+		rules.BLAST_16S_ppm.output,
+	output:
+		All_Combined_Species_count="OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.txt",
+	params:
+		project=config["project"],
+	shell:
+		"""
+		cat $(find OTU_{params.project}/16S_ppm_results -type f -name "*QF_{wildcards.quality_filter}*species_counts.txt") > OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt
+		"""				
