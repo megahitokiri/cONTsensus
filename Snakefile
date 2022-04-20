@@ -276,5 +276,5 @@ rule OTU_COMBINER_CLEANER:
 		BASEDIR=$PWD
 		cat $(find OTU_{params.project}/16S_ppm_results -type f -name "*QF_{wildcards.quality_filter}*species_counts.txt") > OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt
 		sed -i '/^#/d' OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt
-		Rscript --vanilla scripts/OTU_expander.R $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.expanded
+		Rscript --vanilla scripts/OTU_expander.R $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.txt $BASEDIR/OTU_{params.project}/OTU_Analysis/QF_{wildcards.quality_filter}_All_Combined_species_counts.expanded {wildcards.quality_filter}
 		"""				
