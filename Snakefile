@@ -28,7 +28,21 @@ rule cONTsensus:
 		
 		expand("OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.txt",project=config["project"],quality_filter=config["quality_filter"]),
 		expand("OTU_{project}/OTU_Analysis/QF_{quality_filter}_All_Combined_species_counts.expanded",project=config["project"],quality_filter=config["quality_filter"]),
+
+	params:
+		project=config["project"],
+		percentile_filter=config["percentile_filter"],
+	shell:
+		"""
+		BASEDIR=$PWD
+		cat $(find OTU_{params.project}/OTU_Analysis/ -type f -name "*.expanded") > OTU_{params.project}/OTU_Analysis/All_QF_species_count.expanded_full
+
+		Rscript --vanilla scripts/Bigram_Analysis.R $BASEDIR/OTU_{params.project}/OTU_Analysis/All_QF_species_count.expanded_full {params.percentile_filter} $BASEDIR/OTU_{params.project}/OTU_Analysis {params.project}
 		
+		mkdir OTU_{params.project}/Final_Results
+		mv OTU_{params.project}/OTU_Analysis/*.jpg OTU_{params.project}/Final_Results
+		mv OTU_{params.project}/OTU_Analysis/*.summary OTU_{params.project}/Final_Results
+		"""		
 #--------------------------------------------------------------------------------
 # Init: Initializing files and folder
 #--------------------------------------------------------------------------------

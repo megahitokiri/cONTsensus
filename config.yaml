@@ -40,6 +40,9 @@ db_ggc: 'databases/GGC_db/Green_Gene_Consensus'
 max_target_seqs: '10'
 evalue: '0.00001'
 
+#Filter for OTU analysis final step
+percentile_filter: '0.9'
+
 #This parameters can be changed in the 16S_ppm file
 #align_coverage_cutoff: 0
 #align_perc_id_cutoff: 0
