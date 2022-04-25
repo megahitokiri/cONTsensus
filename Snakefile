@@ -55,7 +55,7 @@ rule Init:
 		project=config["project"],
 	shell:
 		"""
-		snakemake --dag | dot -Tsvg > dag.svg
+		snakemake --dag | dot -Tsvg > OTU_{params.project}/dag.svg
 		cp {input.raw_fastq} OTU_{params.project}/Input_Files/{params.project}.fastq
 		"""
 
