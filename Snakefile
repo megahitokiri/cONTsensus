@@ -109,15 +109,17 @@ rule ProwlerTrimmer:
 		ProwlerTrimmer=config["ProwlerTrimmer"],
 		quality_filter=config["quality_filter"],
 		L_filt=config["L_filt"],
+		ProwlerT_multiplier=config["ProwlerT_multiplier"],
 	shell:
 		"""
 		QF_LIST=$(echo {params.quality_filter})
 
 		for Q_filter in $QF_LIST
 			do
-
+			vQF=$(python -c "Result=(int($Q_filter)*int({params.ProwlerT_multiplier})); print(Result)")
+			
 			echo STARTING FILTERING VIA PROWLER_TRIMMER AT QUALITY FILTER OF: $Q_filter ...
-			python3 {params.ProwlerTrimmer} -f {params.project}.fastq.barcode_trimmed.guppy_barcoder -i OTU_{params.project}/Trimmed_Fastq_Guppy_Barcoder/ -o OTU_{params.project}/ProwlerTrimmer_QF_$Q_filter/{params.project} -w 200 -l {params.L_filt} -g F1 -m D -q $Q_filter 
+			python3 {params.ProwlerTrimmer} -f {params.project}.fastq.barcode_trimmed.guppy_barcoder -i OTU_{params.project}/Trimmed_Fastq_Guppy_Barcoder/ -o OTU_{params.project}/ProwlerTrimmer_QF_$Q_filter/{params.project} -w 200 -l {params.L_filt} -g F1 -m D -q $vQF 
 
 			cd OTU_{params.project}/ProwlerTrimmer_QF_$Q_filter
 			mv $(find . -type f -name "*.fastq") {params.project}.ProwlerTrimmer.QF_$Q_filter.fastq

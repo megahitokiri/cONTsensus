@@ -29,6 +29,11 @@ seqtk: 'bin/seqtk/seqtk'
 blastn: 'bin/ncbi-blast-2.13.0+/bin/blastn'
 16S_ppm: 'bin/16S_ppm/16S_ppm_output.py'
 
+#Prowler Trimmer Filtering Multiplier
+#Multiplier should be an integer
+#------------------------------------
+ProwlerT_multiplier: '2' 
+
 #Databases Location
 #----------------------------------------
 # This includes the location of all available databases
